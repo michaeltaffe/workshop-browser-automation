@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scraping Texas tow truck licenses</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/base.css">
+    
+<link rel="stylesheet" href="../static/read.css">
+
+    <script>
+    // Set theme before paint to avoid FOUC
+    (function(){var s=localStorage.getItem('theme');var t=s||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.className='theme-'+(t==='dark'?'noir':'broadsheet');})();
+    </script>
+</head>
+<body>
+
+<div class="theme-switcher">
+    <button class="active" onclick="setTheme('dark', this)">Dark</button>
+    <button onclick="setTheme('light', this)">Light</button>
+</div>
+
+<div class="page">
+    
+
+<nav class="nb-topnav">
+    <a href="../index.html" class="nb-topnav-home">&larr; Home</a>
+    
+    <div class="nb-topnav-title">Browser automation with Playwright</div>
+    
+    <ol class="nb-topnav-list">
+        
+        <li>
+            
+            <a href="00-opensyllabus-ANSWERS.html">Introduction to Playwright with OpenSyllabus</a>
+            
+        </li>
+        
+        <li class="is-current">
+            
+            <span class="nb-topnav-current">Scraping Texas tow truck licenses</span>
+            
+        </li>
+        
+        <li>
+            
+            <a href="02-iowa-appraisal-management-companies-ANSWERS.html">Paginating through Iowa appraisal companies</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="03-north-dakota-oil-wells-ANSWERS.html">Looping through North Dakota oil well townships</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="04-maryland-locksmiths-ANSWERS.html">Filling forms to find Maryland locksmiths</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="05-texas-medical-board-actions-details-ANSWERS.html">Downloading PDFs from the Texas Medical Board</a>
+            
+        </li>
+        
+    </ol>
+</nav>
+
+
+
+<div class="nb-actions">
+    <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/01-texas-tow-trucks-licenses-ANSWERS.ipynb" class="nb-action-btn nb-action-colab" target="_blank" rel="noopener">Run in Colab</a>
+    <a href="01-texas-tow-trucks-licenses-ANSWERS.ipynb" class="nb-action-btn nb-action-download" download>Download notebook</a>
+</div>
+
+
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=e529eda2">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Install required packages</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">playwright</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">beautifulsoup4</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">lxml</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">html5lib</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">pandas</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">nest_asyncio</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">'✓ Packages installed!'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=f8b2aeaf"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Slides:</strong> <a href="./browser-automation.pdf">browser-automation.pdf</a></p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=6bc1e205-ec86-47c0-8f05-39b8e0bf5d46"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this example we are going to scrape the <a href="https://www.tdlr.texas.gov/cimsfo">Texas Department of Licensing and Regulation</a> for tow truck licenses.</p>
+<p>Traditionally Python programmers use <a href="https://beautiful-soup-4.readthedocs.io/en/latest/">BeautifulSoup</a> to scrape content from the interent. Instead of being <em>traditional</em>, we're going to use <a href="https://playwright.dev/python/">Playwright</a>, a <strong>browser automation tool</strong>! This means you actually control the browser! Filling out forms, clicking buttons, downloading documents... it's magic!!!✨✨✨</p>
+<h1 id="Texas-Tow-Truck-Licenses">Texas Tow Truck Licenses<a class="anchor-link" href="#Texas-Tow-Truck-Licenses">¶</a></h1><h2 id="What-we'll-learn/use">What we'll learn/use<a class="anchor-link" href="#What-we'll-learn/use">¶</a></h2><ul>
+<li>Selectors</li>
+<li>Dropdowns</li>
+<li>Single page of results</li>
+<li>Creating and saving a dataframe</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=7e26a68e-9eab-40a5-9cc8-3166a62f85eb"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Installation">Installation<a class="anchor-link" href="#Installation">¶</a></h2><p>We need to install a few tools first! Remove the <code>#</code> and run the cell to install the Python packages and browsers that we'll need for our scraping adventure.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=f7216c80-6474-48f8-9f27-768ad8cc88cc">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># %pip install --quiet lxml html5lib beautifulsoup4 pandas</span>
+<span class="c1"># %pip install --quiet playwright</span>
+<span class="c1"># !playwright install chromium firefox</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=4e056cda"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>And we'll set it up so Playwright will be sure to work on Windows.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=3a36289a">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">IN_COLAB</span> <span class="o">=</span> <span class="s1">'COLAB_GPU'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="ow">or</span> <span class="s1">'COLAB_RELEASE_TAG'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nest_asyncio</span>
+
+<span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop_policy</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">WindowsProactorEventLoopPolicy</span><span class="p">())</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+    <span class="n">nest_asyncio</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=3e8f45f1-cdba-490b-8ed8-74b4b0e983a8"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Opening-up-the-browser-and-visiting-our-destination">Opening up the browser and visiting our destination<a class="anchor-link" href="#Opening-up-the-browser-and-visiting-our-destination">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=69e2e5c0-9641-47c0-a71a-122fb40589f2">
+<div class="input">
+<div class="prompt input_prompt">In [1]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.async_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_playwright</span>
+
+<span class="c1"># "Hey, open up a browser"</span>
+<span class="n">playwright</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_playwright</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Colab can't open a visible browser, so we run headless there</span>
+<span class="k">if</span> <span class="n">IN_COLAB</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">browser</span> <span class="o">=</span> <span class="k">await</span> <span class="n">playwright</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="n">use_headless</span><span class="p">)</span>
+
+<span class="c1"># Create a new browser window</span>
+<span class="n">page</span> <span class="o">=</span> <span class="k">await</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_page</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=2e2396e4-9eb2-44c3-8961-3266188eb1bb">
+<div class="input">
+<div class="prompt input_prompt">In [2]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"https://www.tdlr.texas.gov/cimsfo/"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[2]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>&lt;Response url='https://www.tdlr.texas.gov/cimsfo/' request=&lt;Request url='https://www.tdlr.texas.gov/cimsfo/' method='GET'&gt;&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=187528cd">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="n">screenshot</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">screenshot</span><span class="p">()</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">screenshot</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=ce0975ac-f0b8-40a8-8aa3-21cf8fb9ee89"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Selecting-an-option-from-a-dropdown">Selecting an option from a dropdown<a class="anchor-link" href="#Selecting-an-option-from-a-dropdown">¶</a></h2><p>You always start with <code>await page.locator("select").select_option("whatever option you want")</code>. You'll probably get an error because there are multiple dropdowns on the page, but Playwright doesn't know which one you want to use! Just read the error and figure out the right one.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=6a4af410-be35-4e4b-b907-faf13935dbba">
+<div class="input">
+<div class="prompt input_prompt">In [3]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># await page.locator("select").select_option("Tow Truck Companies")</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_label</span><span class="p">(</span><span class="s2">"Search by License Program Type"</span><span class="p">)</span><span class="o">.</span><span class="n">select_option</span><span class="p">(</span><span class="s2">"Tow Truck Companies"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[3]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>['TOW']</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=362c7982-f877-4063-aed4-7be9e1d191e5"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Clicking-the-search-button">Clicking the search button<a class="anchor-link" href="#Clicking-the-search-button">¶</a></h2><p>Same as with dropdowns, for buttons you always start with <code>await page.get_by_text("search or submit or whatever").click()</code>. You usually get an error, and then you read the error to find out the <em>right</em> thing to click.</p>
+<p>In this case it looks absolutely nightmarish. Can you imagine figuring that one out manually?</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=5cc1c555-1d1b-499f-98f5-9d8d2316b77d">
+<div class="input">
+<div class="prompt input_prompt">In [4]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># await page.get_by_text("Search").click()</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s1">'xpath=//*[@id="dat-menu"]/div/div[2]/div/div/section/div/div/table/tbody/tr/td/form/table/tbody/tr[18]/td/input[1]'</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=e97b41e8-ec4b-4d0b-a913-4456f3186458"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Grab-the-tables-from-the-page">Grab the tables from the page<a class="anchor-link" href="#Grab-the-tables-from-the-page">¶</a></h2><p><a href="https://pandas.pydata.org/">Pandas</a> is the Python equivalent to Excel, and it's great at dealing with tabular data! Often the data on a web page that looks like a spreadsheet can be read with <code>pd.read_html</code>.</p>
+<p>You use <code>await page.content()</code> to save the contents of the page, then feed it to <code>read_html</code> to find the tables. <code>len(tables)</code> checks the number of tables you have, then you manually poke around to see which one is the one you're interested in. <code>tables[0]</code> is the first one, <code>tables[1]</code> is the second one, and so on...</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered celltag_solution" id="cell-id=66be6a9b-c861-4e5a-b95e-3de2548c225b">
+<div class="input">
+<div class="prompt input_prompt">In [5]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+
+<span class="n">html</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="n">tables</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_html</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">html</span><span class="p">))</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[5]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>1</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=c15517ba-b4c8-4468-8892-f59df5c93b9b"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this case there's only one table, so we'll look at the first one. We're saving it as <code>df</code> because... that's what Python/pandas people do!</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=d35c6e02-fa86-4075-b80b-f15e81ed4de3">
+<div class="input">
+<div class="prompt input_prompt">In [6]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[6]:</div>
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Name and Location</th>
+<th>Order</th>
+<th>Basis for Order</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>Company: AP TOWING  City: FORT WORTH  County: ...</td>
+<td>Date: 2/3/2026 Respondent is assessed an admin...</td>
+<td>Respondent performed an unauthorized private p...</td>
+</tr>
+<tr>
+<th>1</th>
+<td>GARCIA, JOSE A  Company: ANGEL WRECKER SERVICE...</td>
+<td>Date: 2/3/2026 Respondent is assessed an admin...</td>
+<td>Respondent performed an illegal tow.</td>
+</tr>
+<tr>
+<th>2</th>
+<td>Company: TRINITY TOWING  City: SAN ANTONIO  Co...</td>
+<td>Date: 1/21/2026 Respondent is assessed an admi...</td>
+<td>Respondent performed an illegal tow.</td>
+</tr>
+<tr>
+<th>3</th>
+<td>Company: TEXAS TOWAWAY LLC  City: JUSTIN  Coun...</td>
+<td>Date: 1/21/2026 Respondent is assessed an admi...</td>
+<td>Respondent performed an unauthorized private p...</td>
+</tr>
+<tr>
+<th>4</th>
+<td>Company: H4 TOWING INC  City: FORT WORTH  Coun...</td>
+<td>Date: 1/15/2026 Respondent is assessed an admi...</td>
+<td>Respondent performed an unauthorized private p...</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=6d912e9e-8a86-458e-a786-421b7455d0fb"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Saving-the-results">Saving the results<a class="anchor-link" href="#Saving-the-results">¶</a></h2><p>Now we'll save it to a CSV file! Easy peasy.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=4ebbc24e-5ee3-40c0-8e2e-68e72d3d58d6">
+<div class="input">
+<div class="prompt input_prompt">In [7]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">"output.csv"</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<nav class="nb-nav">
+    
+    <a href="00-opensyllabus-ANSWERS.html" class="nb-nav-prev">&larr; Introduction to Playwright with OpenSyllabus</a>
+    
+    
+    <a href="02-iowa-appraisal-management-companies-ANSWERS.html" class="nb-nav-next">Paginating through Iowa appraisal companies &rarr;</a>
+    
+</nav>
+
+
+
+<footer class="site-footer">
+    <div class="newsletter-signup">
+        <p class="newsletter-title">Manual Checks</p>
+<p class="newsletter-desc">A newsletter by Jonathan Soma</p>
+<script async src="https://subscribe-forms.beehiiv.com/embed.js"></script>
+<iframe src="https://subscribe-forms.beehiiv.com/74449fe6-9aee-4fca-81ec-c07b8588210f" class="newsletter-embed beehiiv-embed" data-test-id="beehiiv-embed" frameborder="0" scrolling="no"></iframe>
+
+    </div>
+</footer>
+
+
+</div>
+
+<script>
+function setTheme(theme, btn) {
+    var darkNames = {'dark':1, 'noir':1};
+    var cls = darkNames[theme] ? 'noir' : 'broadsheet';
+    document.documentElement.className = 'theme-' + cls;
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    localStorage.setItem('theme', darkNames[theme] ? 'dark' : 'light');
+}
+
+// Sync button active state (theme already set by head script)
+(function() {
+    var saved = localStorage.getItem('theme');
+    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    var label = theme === 'dark' ? 'Dark' : 'Light';
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.trim() === label);
+    });
+})();
+
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('theme')) {
+        var cls = e.matches ? 'broadsheet' : 'noir';
+        document.documentElement.className = 'theme-' + cls;
+        var label = e.matches ? 'Light' : 'Dark';
+        document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+            b.classList.toggle('active', b.textContent.trim() === label);
+        });
+    }
+});
+</script>
+
+<script>
+// Detect blocked newsletter iframes and show a fallback link
+(function() {
+    function replaceWithLink(iframe, src) {
+        var link = document.createElement('a');
+        link.href = src;
+        link.className = 'newsletter-fallback-btn';
+        link.innerHTML = 'Subscribe to the newsletter &rarr;';
+        iframe.replaceWith(link);
+        // Also hide the beehiiv script tag if present
+        var scripts = document.querySelectorAll('.newsletter-signup script');
+        scripts.forEach(function(s) { s.remove(); });
+    }
+    document.querySelectorAll('.newsletter-signup iframe').forEach(function(iframe) {
+        var src = iframe.src;
+        if (!src) return;
+        // Check iframe dimensions after it settles — blocked iframes
+        // typically render as 0-height or very small
+        var timer = setTimeout(function() {
+            var h = iframe.offsetHeight || iframe.getBoundingClientRect().height;
+            if (h < 20) {
+                replaceWithLink(iframe, src);
+            }
+        }, 3000);
+    });
+})();
+</script>
+</body>
+</html>

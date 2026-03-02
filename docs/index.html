@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Browser automation with Playwright</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/base.css">
+    
+<link rel="stylesheet" href="static/index.css">
+
+    <script>
+    // Set theme before paint to avoid FOUC
+    (function(){var s=localStorage.getItem('theme');var t=s||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.className='theme-'+(t==='dark'?'noir':'broadsheet');})();
+    </script>
+</head>
+<body>
+
+<div class="theme-switcher">
+    <button class="active" onclick="setTheme('dark', this)">Dark</button>
+    <button onclick="setTheme('light', this)">Light</button>
+</div>
+
+<div class="page">
+    
+<header>
+    <div class="conference-label">NICAR 2026</div>
+    <h1 class="site-title">Browser automation with Playwright</h1>
+    <p class="site-author">Jonathan Soma, Columbia University</p>
+    <div class="site-description"><p>Learn to scrape JavaScript-rendered websites using Playwright. We'll click buttons, fill out forms, loop through dropdowns and paginated results, and download files — all from the comfort of a Jupyter notebook.</p></div>
+    
+    <div class="site-meta-links">
+        
+            <a href="mailto:js4571@columbia.edu">js4571@columbia.edu</a> &nbsp;&bull;&nbsp; 
+        
+            <a href="https://x.com/dangerscarf">@dangerscarf</a> &nbsp;&bull;&nbsp; 
+        
+            <a href="https://ledeprogram.com/">Lede Program</a> &nbsp;&bull;&nbsp; 
+        
+            <a href="https://jonathansoma.com/">jonathansoma.com</a>
+        
+    </div>
+    
+</header>
+
+
+<hr class="section-divider">
+
+
+<div class="notebook-card">
+    <div class="step-number">01</div>
+    <div class="card-content">
+        <h3 class="notebook-title"><a href="./browser-automation/00-opensyllabus-ANSWERS.html">Introduction to Playwright with OpenSyllabus</a></h3>
+        <p class="notebook-desc">When requests and BeautifulSoup can't see content because it's rendered by JavaScript, it's time to bring in a real browser. We'll use Playwright to scrape a JavaScript-heavy site, click 'Show More' buttons, and pull data into pandas.</p>
+        <div class="secondary-actions">
+            <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/00-opensyllabus.ipynb" class="action-codealong">Code-along</a>
+            <a href="./browser-automation/00-opensyllabus-ANSWERS.ipynb" class="action-download">Download .ipynb</a>
+        </div>
+        
+        <div class="ref-links">
+            <span>Ref:</span>
+            
+                <a href="https://playwright.dev/python/">Playwright for Python</a> &bull; 
+            
+                <a href="https://opensyllabus.org/">OpenSyllabus</a>
+            
+        </div>
+        
+    </div>
+    <div class="card-action">
+        <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/00-opensyllabus-ANSWERS.ipynb" class="primary-btn">Open in Colab</a>
+        <a href="./browser-automation/00-opensyllabus-ANSWERS.html" class="read-btn">Read</a>
+    </div>
+</div>
+
+<div class="notebook-card">
+    <div class="step-number">02</div>
+    <div class="card-content">
+        <h3 class="notebook-title"><a href="./browser-automation/01-texas-tow-trucks-licenses-ANSWERS.html">Scraping Texas tow truck licenses</a></h3>
+        <p class="notebook-desc">A gentle warm-up: select an option from a dropdown, click search, and grab the results table. Just enough interaction to get comfortable with Playwright's selectors.</p>
+        <div class="secondary-actions">
+            <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/01-texas-tow-trucks-licenses.ipynb" class="action-codealong">Code-along</a>
+            <a href="./browser-automation/01-texas-tow-trucks-licenses-ANSWERS.ipynb" class="action-download">Download .ipynb</a>
+        </div>
+        
+        <div class="ref-links">
+            <span>Ref:</span>
+            
+                <a href="https://www.tdlr.texas.gov/cimsfo/">Texas TDLR license search</a>
+            
+        </div>
+        
+    </div>
+    <div class="card-action">
+        <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/01-texas-tow-trucks-licenses-ANSWERS.ipynb" class="primary-btn">Open in Colab</a>
+        <a href="./browser-automation/01-texas-tow-trucks-licenses-ANSWERS.html" class="read-btn">Read</a>
+    </div>
+</div>
+
+<div class="notebook-card">
+    <div class="step-number">03</div>
+    <div class="card-content">
+        <h3 class="notebook-title"><a href="./browser-automation/02-iowa-appraisal-management-companies-ANSWERS.html">Paginating through Iowa appraisal companies</a></h3>
+        <p class="notebook-desc">What happens when results span multiple pages? We'll click 'Next Page' in a loop, collecting every table along the way and combining them with pandas.</p>
+        <div class="secondary-actions">
+            <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/02-iowa-appraisal-management-companies.ipynb" class="action-codealong">Code-along</a>
+            <a href="./browser-automation/02-iowa-appraisal-management-companies-ANSWERS.ipynb" class="action-download">Download .ipynb</a>
+        </div>
+        
+        <div class="ref-links">
+            <span>Ref:</span>
+            
+                <a href="https://ia-plb.my.site.com/LicenseSearchPage">Iowa Professional Licensing</a>
+            
+        </div>
+        
+    </div>
+    <div class="card-action">
+        <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/02-iowa-appraisal-management-companies-ANSWERS.ipynb" class="primary-btn">Open in Colab</a>
+        <a href="./browser-automation/02-iowa-appraisal-management-companies-ANSWERS.html" class="read-btn">Read</a>
+    </div>
+</div>
+
+<div class="notebook-card">
+    <div class="step-number">04</div>
+    <div class="card-content">
+        <h3 class="notebook-title"><a href="./browser-automation/03-north-dakota-oil-wells-ANSWERS.html">Looping through North Dakota oil well townships</a></h3>
+        <p class="notebook-desc">Instead of paginating, this time we loop through every option in a dropdown. Each township gets its own search, and we stack all the results together.</p>
+        <div class="secondary-actions">
+            <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/03-north-dakota-oil-wells.ipynb" class="action-codealong">Code-along</a>
+            <a href="./browser-automation/03-north-dakota-oil-wells-ANSWERS.ipynb" class="action-download">Download .ipynb</a>
+        </div>
+        
+        <div class="ref-links">
+            <span>Ref:</span>
+            
+                <a href="https://www.dmr.nd.gov/oilgas/findwellsvw.asp">ND Oil and Gas well search</a>
+            
+        </div>
+        
+    </div>
+    <div class="card-action">
+        <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/03-north-dakota-oil-wells-ANSWERS.ipynb" class="primary-btn">Open in Colab</a>
+        <a href="./browser-automation/03-north-dakota-oil-wells-ANSWERS.html" class="read-btn">Read</a>
+    </div>
+</div>
+
+<div class="notebook-card">
+    <div class="step-number">05</div>
+    <div class="card-content">
+        <h3 class="notebook-title"><a href="./browser-automation/04-maryland-locksmiths-ANSWERS.html">Filling forms to find Maryland locksmiths</a></h3>
+        <p class="notebook-desc">Now we're typing into text fields instead of picking from dropdowns. We'll loop through a list of zip codes, fill in the search form each time, and collect the results.</p>
+        <div class="secondary-actions">
+            <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/04-maryland-locksmiths.ipynb" class="action-codealong">Code-along</a>
+            <a href="./browser-automation/04-maryland-locksmiths-ANSWERS.ipynb" class="action-download">Download .ipynb</a>
+        </div>
+        
+        <div class="ref-links">
+            <span>Ref:</span>
+            
+                <a href="https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=locksmith::locksmith">Maryland electronic licensing</a>
+            
+        </div>
+        
+    </div>
+    <div class="card-action">
+        <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/04-maryland-locksmiths-ANSWERS.ipynb" class="primary-btn">Open in Colab</a>
+        <a href="./browser-automation/04-maryland-locksmiths-ANSWERS.html" class="read-btn">Read</a>
+    </div>
+</div>
+
+<div class="notebook-card">
+    <div class="step-number">06</div>
+    <div class="card-content">
+        <h3 class="notebook-title"><a href="./browser-automation/05-texas-medical-board-actions-details-ANSWERS.html">Downloading PDFs from the Texas Medical Board</a></h3>
+        <p class="notebook-desc">The final boss: navigate to a page, fill in a license number, click through tabs, find document links, and download PDFs. Then do it all over again for a whole list of licenses.</p>
+        <div class="secondary-actions">
+            <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/05-texas-medical-board-actions-details.ipynb" class="action-codealong">Code-along</a>
+            <a href="./browser-automation/05-texas-medical-board-actions-details-ANSWERS.ipynb" class="action-download">Download .ipynb</a>
+        </div>
+        
+        <div class="ref-links">
+            <span>Ref:</span>
+            
+                <a href="https://profile.tmb.state.tx.us/SearchBA.aspx">Texas Medical Board search</a>
+            
+        </div>
+        
+    </div>
+    <div class="card-action">
+        <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/05-texas-medical-board-actions-details-ANSWERS.ipynb" class="primary-btn">Open in Colab</a>
+        <a href="./browser-automation/05-texas-medical-board-actions-details-ANSWERS.html" class="read-btn">Read</a>
+    </div>
+</div>
+
+
+
+
+<footer class="site-footer">
+    <div class="newsletter-signup">
+        <p class="newsletter-title">Manual Checks</p>
+<p class="newsletter-desc">A newsletter by Jonathan Soma</p>
+<script async src="https://subscribe-forms.beehiiv.com/embed.js"></script>
+<iframe src="https://subscribe-forms.beehiiv.com/74449fe6-9aee-4fca-81ec-c07b8588210f" class="newsletter-embed beehiiv-embed" data-test-id="beehiiv-embed" frameborder="0" scrolling="no"></iframe>
+
+    </div>
+</footer>
+
+
+</div>
+
+<script>
+function setTheme(theme, btn) {
+    var darkNames = {'dark':1, 'noir':1};
+    var cls = darkNames[theme] ? 'noir' : 'broadsheet';
+    document.documentElement.className = 'theme-' + cls;
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    localStorage.setItem('theme', darkNames[theme] ? 'dark' : 'light');
+}
+
+// Sync button active state (theme already set by head script)
+(function() {
+    var saved = localStorage.getItem('theme');
+    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    var label = theme === 'dark' ? 'Dark' : 'Light';
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.trim() === label);
+    });
+})();
+
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('theme')) {
+        var cls = e.matches ? 'broadsheet' : 'noir';
+        document.documentElement.className = 'theme-' + cls;
+        var label = e.matches ? 'Light' : 'Dark';
+        document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+            b.classList.toggle('active', b.textContent.trim() === label);
+        });
+    }
+});
+</script>
+
+<script>
+// Detect blocked newsletter iframes and show a fallback link
+(function() {
+    function replaceWithLink(iframe, src) {
+        var link = document.createElement('a');
+        link.href = src;
+        link.className = 'newsletter-fallback-btn';
+        link.innerHTML = 'Subscribe to the newsletter &rarr;';
+        iframe.replaceWith(link);
+        // Also hide the beehiiv script tag if present
+        var scripts = document.querySelectorAll('.newsletter-signup script');
+        scripts.forEach(function(s) { s.remove(); });
+    }
+    document.querySelectorAll('.newsletter-signup iframe').forEach(function(iframe) {
+        var src = iframe.src;
+        if (!src) return;
+        // Check iframe dimensions after it settles — blocked iframes
+        // typically render as 0-height or very small
+        var timer = setTimeout(function() {
+            var h = iframe.offsetHeight || iframe.getBoundingClientRect().height;
+            if (h < 20) {
+                replaceWithLink(iframe, src);
+            }
+        }, 3000);
+    });
+})();
+</script>
+</body>
+</html>

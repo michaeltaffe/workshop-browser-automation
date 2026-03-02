@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Downloading PDFs from the Texas Medical Board</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/base.css">
+    
+<link rel="stylesheet" href="../static/read.css">
+
+    <script>
+    // Set theme before paint to avoid FOUC
+    (function(){var s=localStorage.getItem('theme');var t=s||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.className='theme-'+(t==='dark'?'noir':'broadsheet');})();
+    </script>
+</head>
+<body>
+
+<div class="theme-switcher">
+    <button class="active" onclick="setTheme('dark', this)">Dark</button>
+    <button onclick="setTheme('light', this)">Light</button>
+</div>
+
+<div class="page">
+    
+
+<nav class="nb-topnav">
+    <a href="../index.html" class="nb-topnav-home">&larr; Home</a>
+    
+    <div class="nb-topnav-title">Browser automation with Playwright</div>
+    
+    <ol class="nb-topnav-list">
+        
+        <li>
+            
+            <a href="00-opensyllabus-ANSWERS.html">Introduction to Playwright with OpenSyllabus</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="01-texas-tow-trucks-licenses-ANSWERS.html">Scraping Texas tow truck licenses</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="02-iowa-appraisal-management-companies-ANSWERS.html">Paginating through Iowa appraisal companies</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="03-north-dakota-oil-wells-ANSWERS.html">Looping through North Dakota oil well townships</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="04-maryland-locksmiths-ANSWERS.html">Filling forms to find Maryland locksmiths</a>
+            
+        </li>
+        
+        <li class="is-current">
+            
+            <span class="nb-topnav-current">Downloading PDFs from the Texas Medical Board</span>
+            
+        </li>
+        
+    </ol>
+</nav>
+
+
+
+<div class="nb-actions">
+    <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/05-texas-medical-board-actions-details-ANSWERS.ipynb" class="nb-action-btn nb-action-colab" target="_blank" rel="noopener">Run in Colab</a>
+    <a href="05-texas-medical-board-actions-details-ANSWERS.ipynb" class="nb-action-btn nb-action-download" download>Download notebook</a>
+</div>
+
+
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=9d552916">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Install required packages</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">playwright</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">beautifulsoup4</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">lxml</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">html5lib</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">pandas</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">nest_asyncio</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">urllib.request</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zipfile</span>
+
+<span class="c1"># Download and extract data files</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s1">'https://github.com/jsoma/workshop-browser-automation/raw/main/docs/browser-automation/05-texas-medical-board-actions-details-data.zip'</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Downloading data from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">...'</span><span class="p">)</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s1">'05-texas-medical-board-actions-details-data.zip'</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Extracting 05-texas-medical-board-actions-details-data.zip...'</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="s1">'05-texas-medical-board-actions-details-data.zip'</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+    <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">'05-texas-medical-board-actions-details-data.zip'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'✓ Data files extracted!'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=825dad55"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Slides:</strong> <a href="./browser-automation.pdf">browser-automation.pdf</a></p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=767e0001-a5e1-4181-9f38-7af268610b23"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this example we are going to scrape board actions from the <a href="https://profile.tmb.state.tx.us/SearchBA.aspx">Texas Medical Board</a>. Unlike last time, we're doing to be downloading a bunch of PDFs with details!</p>
+<p>Traditionally Python programmers use <a href="https://beautiful-soup-4.readthedocs.io/en/latest/">BeautifulSoup</a> to scrape content from the interent. Instead of being <em>traditional</em>, we're going to use <a href="https://playwright.dev/python/">Playwright</a>, a <strong>browser automation tool</strong>! This means you actually control the browser! Filling out forms, clicking buttons, downloading documents... it's magic!!!✨✨✨</p>
+<h1 id="Texas-Medical-Board-Actions-Details">Texas Medical Board Actions Details<a class="anchor-link" href="#Texas-Medical-Board-Actions-Details">¶</a></h1><ul>
+<li>Filling out text inputs</li>
+<li>Inspecting the page</li>
+<li>Combining dataframes</li>
+<li>Looping through licenses</li>
+<li>Downloading PDFs (using Firefox)</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=5a3f13b0-ae94-4daf-911a-26d84dded030"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Installation">Installation<a class="anchor-link" href="#Installation">¶</a></h2><p>We need to install a few tools first! Remove the <code>#</code> and run the cell to install the Python packages and browsers that we'll need for our scraping adventure.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=537e5772-324f-4526-8807-7730f17a1281">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># %pip install --quiet lxml html5lib beautifulsoup4 pandas</span>
+<span class="c1"># %pip install --quiet playwright</span>
+<span class="c1"># !playwright install chromium firefox</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=29d2941d"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>And we'll set it up to be sure Playwright will work on Windows.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=4a6263fd">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">IN_COLAB</span> <span class="o">=</span> <span class="s1">'COLAB_GPU'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="ow">or</span> <span class="s1">'COLAB_RELEASE_TAG'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nest_asyncio</span>
+
+<span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop_policy</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">WindowsProactorEventLoopPolicy</span><span class="p">())</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+    <span class="n">nest_asyncio</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=bbd4ff15-9ca6-4f94-9941-aa144ddb53e9"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Opening-up-the-browser-and-visiting-our-destination">Opening up the browser and visiting our destination<a class="anchor-link" href="#Opening-up-the-browser-and-visiting-our-destination">¶</a></h2><p>We've been using Chromium (basically Chrome) for most of our exercises, but in this case we're using Firefox! Chromium for some reason sometimes gets blocked, while Firefox doesn't. Not sure why!</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=44aa283c-611d-4315-94bc-c4013c219d2f">
+<div class="input">
+<div class="prompt input_prompt">In [1]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.async_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_playwright</span>
+
+<span class="c1"># "Hey, open up a browser"</span>
+<span class="n">playwright</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_playwright</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Colab can't open a visible browser, so we run headless there</span>
+<span class="k">if</span> <span class="n">IN_COLAB</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">browser</span> <span class="o">=</span> <span class="k">await</span> <span class="n">playwright</span><span class="o">.</span><span class="n">firefox</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="n">use_headless</span><span class="p">)</span>
+
+<span class="c1"># Create a new browser window</span>
+<span class="n">page</span> <span class="o">=</span> <span class="k">await</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_page</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=73626fae-b072-4bff-a4a5-c3785131994f">
+<div class="input">
+<div class="prompt input_prompt">In [2]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"https://profile.tmb.state.tx.us/SearchBA.aspx?eb2d4a70-6591-4ad4-ae6d-a2727e84cb39"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[2]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>&lt;Response url='https://profile.tmb.state.tx.us/SearchBA.aspx?eb2d4a70-6591-4ad4-ae6d-a2727e84cb39' request=&lt;Request url='https://profile.tmb.state.tx.us/SearchBA.aspx?eb2d4a70-6591-4ad4-ae6d-a2727e84cb39' method='GET'&gt;&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=28af8e57">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="n">screenshot</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">screenshot</span><span class="p">()</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">screenshot</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=509a773f-4d0b-4805-a2fb-bca127e88109"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Filling-in-a-single-license-and-searching">Filling in a single license and searching<a class="anchor-link" href="#Filling-in-a-single-license-and-searching">¶</a></h1><p>Filling in text fields, clicking, waiting for buttons to show up and clicking. Nothing crazy!</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=e7be2b37-9120-4b3e-9e0e-284803acc7d1">
+<div class="input">
+<div class="prompt input_prompt">In [3]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># M6992</span>
+<span class="c1"># Q5611</span>
+<span class="c1"># M1444</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">"#BodyContent_tbLicense"</span><span class="p">)</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">"M6992"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=238c4c78-ff16-45df-a205-8d159da83e72">
+<div class="input">
+<div class="prompt input_prompt">In [4]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Search"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=8123cc84-aac0-4a49-974f-4461f20ce7cb">
+<div class="input">
+<div class="prompt input_prompt">In [7]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_text</span><span class="p">(</span><span class="s2">"Document"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=1aaf1f04-e557-4ce5-a0c4-3ed192ad5d54"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Opening-up-the-documents-section">Opening up the documents section<a class="anchor-link" href="#Opening-up-the-documents-section">¶</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=5359141c-99c3-452a-bb7a-6bc5fddb75d3">
+<div class="input">
+<div class="prompt input_prompt">In [8]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"ExpandWeb Documents"</span><span class="p">)</span><span class="o">.</span><span class="n">wait_for</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=6f15f30e-c7dd-4301-a48b-c800b3d93845">
+<div class="input">
+<div class="prompt input_prompt">In [9]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"ExpandWeb Documents"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=e3cdeb41-e7e2-43d6-80ae-4375bc270f71"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>I dug into the code on the page and we have 3 links.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=89abf468-cad4-4c40-9ec5-f8ac2b115a47">
+<div class="input">
+<div class="prompt input_prompt">In [11]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">links</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">".doclink"</span><span class="p">)</span>
+<span class="k">await</span> <span class="n">links</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[11]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>3</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=928d9d57-3679-458a-9c03-3fb512059b5a"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Downloading-one-of-the-PDFs">Downloading one of the PDFs<a class="anchor-link" href="#Downloading-one-of-the-PDFs">¶</a></h3><p>By default this opens up in Chrome/Chromium as an in-page PDF. We change to Firefox to make it actually download.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=8e4f3368-f1c7-4c0a-938a-822b1eeeb215">
+<div class="input">
+<div class="prompt input_prompt">In [13]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># Start waiting for the download</span>
+<span class="k">async</span> <span class="k">with</span> <span class="n">page</span><span class="o">.</span><span class="n">expect_download</span><span class="p">()</span> <span class="k">as</span> <span class="n">download_info</span><span class="p">:</span>
+    <span class="c1"># Perform the action that initiates download</span>
+    <span class="k">await</span> <span class="n">links</span><span class="o">.</span><span class="n">nth</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+<span class="n">download</span> <span class="o">=</span> <span class="k">await</span> <span class="n">download_info</span><span class="o">.</span><span class="n">value</span>
+
+<span class="n">filename</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">"Downloads"</span> <span class="o">/</span> <span class="n">download</span><span class="o">.</span><span class="n">suggested_filename</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Saving as"</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+<span class="c1"># Wait for the download process to complete and save the downloaded file to "Downloads"</span>
+<span class="k">await</span> <span class="n">download</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Saving as /Users/soma/Downloads/0000FD89.PDF
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=9106f99a-5740-4af4-aee9-366808cc5c92"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Return-to-the-previous-page">Return to the previous page<a class="anchor-link" href="#Return-to-the-previous-page">¶</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=d4d60254-5bee-44b8-b443-404596f1ec26">
+<div class="input">
+<div class="prompt input_prompt">In [14]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1">#await page.get_by_text("Back").click()</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"link"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Back"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=85ed3d06-0596-4633-a6a4-ba331ebce0e4"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Putting-it-all-together">Putting it all together<a class="anchor-link" href="#Putting-it-all-together">¶</a></h2><p>If we had a CSV with licenses in it, we can read in the CSV file and extract a list of licenses.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=be5817e5-fef7-4852-9dab-165bcf42188a">
+<div class="input">
+<div class="prompt input_prompt">In [15]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"licenses.csv"</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[15]:</div>
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Name</th>
+<th>License</th>
+<th>Type</th>
+<th>Address</th>
+<th>City</th>
+<th>Board Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>HENSEN, ERIC LOGAN</td>
+<td>R0868</td>
+<td>Physician License</td>
+<td>112 MEDICAL DR</td>
+<td>PALESTINE</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>1</th>
+<td>CASTILLO, MARGUI</td>
+<td>NONE</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2</th>
+<td>HADEN, MARSHALL LYNN</td>
+<td>BP10078006</td>
+<td>Physician-in-Training Permit</td>
+<td>6431 FANNIN ST</td>
+<td>HOUSTON</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>3</th>
+<td>CHAVEZ, JORGE</td>
+<td>NONE</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=efb8c254-0cdb-42b9-a3bf-4a6c12357176">
+<div class="input">
+<div class="prompt input_prompt">In [12]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">licenses</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'License'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<span class="c1"># We don't like the NONE one, so we'll remove it.</span>
+<span class="n">licenses</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">'NONE'</span><span class="p">)</span>
+<span class="n">licenses</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[12]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>['R0868', 'BP10078006']</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=9cfc5f84-e0f8-434e-a405-3bc218399ea7"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>I don't think we have very many licenses in the CSV, so we'll try it again with a list of licenses that I put together manually.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered celltag_solution" id="cell-id=208d94bc-ceb7-4bbf-843a-2f3b3b1aac53">
+<div class="input">
+<div class="prompt input_prompt">In [16]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="n">licenses</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'M6992'</span><span class="p">,</span> <span class="s1">'Q5611'</span><span class="p">,</span> <span class="s1">'M1444'</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">license</span> <span class="ow">in</span> <span class="n">licenses</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Searching for"</span><span class="p">,</span> <span class="n">license</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"https://profile.tmb.state.tx.us/SearchBA.aspx?eb2d4a70-6591-4ad4-ae6d-a2727e84cb39"</span><span class="p">)</span>
+    
+    <span class="c1"># Fill out license</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">"#BodyContent_tbLicense"</span><span class="p">)</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">license</span><span class="p">)</span>
+    
+    <span class="c1"># Click search button</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Search"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+    
+    <span class="c1"># Move into Documents section</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_text</span><span class="p">(</span><span class="s2">"Document"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+    
+    <span class="c1"># Expand documents tab</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"ExpandWeb Documents"</span><span class="p">)</span><span class="o">.</span><span class="n">wait_for</span><span class="p">()</span>
+
+    <span class="c1"># Manually wait for it to open, ugh</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"ExpandWeb Documents"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">links</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">".doclink"</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="k">await</span> <span class="n">links</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Found"</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="s2">"documents"</span><span class="p">)</span>
+
+    <span class="c1"># Download all documents</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+        <span class="c1"># Wait for download</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">page</span><span class="o">.</span><span class="n">expect_download</span><span class="p">()</span> <span class="k">as</span> <span class="n">download_info</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">links</span><span class="o">.</span><span class="n">nth</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+            <span class="n">download</span> <span class="o">=</span> <span class="k">await</span> <span class="n">download_info</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">"Downloads"</span> <span class="o">/</span> <span class="n">download</span><span class="o">.</span><span class="n">suggested_filename</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Saving as"</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># Wait for the download process to complete and save the downloaded file to "Downloads"</span>
+        <span class="k">await</span> <span class="n">download</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Searching for M6992
+Found 3 documents
+</pre>
+</div>
+</div>
+<div class="output_area">
+<div class="prompt"></div>
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">TimeoutError</span>                              Traceback (most recent call last)
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[16]</span><span class="ansi-green-fg">, line 34</span>
+<span class="ansi-green-fg">     31</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> i <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span style="color: rgb(0,135,0)">range</span>(count):
+<span class="ansi-green-fg">     32</span>     <span style="color: rgb(95,135,135)"># Wait for download</span>
+<span class="ansi-green-fg">     33</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">with</span> page.expect_download() <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> download_info:
+<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">34</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> links.nth(i).click()
+<span class="ansi-green-fg">     35</span>         download = <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> download_info.value
+<span class="ansi-green-fg">     37</span>     filename = Path.home() / <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Downloads</span><span class="ansi-yellow-fg">"</span> / download.suggested_filename
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/async_api/_generated.py:15603</span>, in <span class="ansi-cyan-fg">Locator.click</span><span class="ansi-blue-fg">(self, modifiers, position, delay, button, click_count, timeout, force, no_wait_after, trial, steps)</span>
+<span class="ansi-green-fg">  15518</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">click</span>(
+<span class="ansi-green-fg">  15519</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">  15520</span>     *,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">  15532</span>     steps: typing.Optional[<span style="color: rgb(0,135,0)">int</span>] = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">  15533</span> ) -&gt; <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">  15534</span> <span style="color: rgb(188,188,188)">    </span><span class="ansi-yellow-fg">"""Locator.click</span>
+<span class="ansi-green-fg">  15535</span> 
+<span class="ansi-green-fg">  15536</span> <span class="ansi-yellow-fg">    Click an element.</span>
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">  15599</span> <span class="ansi-yellow-fg">        position and the provided destination. When set to 1, emits a single `mousemove` event at the destination location.</span>
+<span class="ansi-green-fg">  15600</span> <span class="ansi-yellow-fg">    """</span>
+<span class="ansi-green-fg">  15602</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> mapping.from_maybe_impl(
+<span class="ansi-green-fg">&gt; </span><span class="ansi-green-fg">15603</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._impl_obj.click(
+<span class="ansi-green-fg">  15604</span>             modifiers=mapping.to_impl(modifiers),
+<span class="ansi-green-fg">  15605</span>             position=position,
+<span class="ansi-green-fg">  15606</span>             delay=delay,
+<span class="ansi-green-fg">  15607</span>             button=button,
+<span class="ansi-green-fg">  15608</span>             clickCount=click_count,
+<span class="ansi-green-fg">  15609</span>             timeout=timeout,
+<span class="ansi-green-fg">  15610</span>             force=force,
+<span class="ansi-green-fg">  15611</span>             noWaitAfter=no_wait_after,
+<span class="ansi-green-fg">  15612</span>             trial=trial,
+<span class="ansi-green-fg">  15613</span>             steps=steps,
+<span class="ansi-green-fg">  15614</span>         )
+<span class="ansi-green-fg">  15615</span>     )
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_locator.py:162</span>, in <span class="ansi-cyan-fg">Locator.click</span><span class="ansi-blue-fg">(self, modifiers, position, delay, button, clickCount, timeout, force, noWaitAfter, trial, steps)</span>
+<span class="ansi-green-fg">    148</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">click</span>(
+<span class="ansi-green-fg">    149</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">    150</span>     modifiers: Sequence[KeyboardModifier] = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">    159</span>     steps: <span style="color: rgb(0,135,0)">int</span> = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">    160</span> ) -&gt; <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">    161</span>     params = locals_to_params(<span style="color: rgb(0,135,0)">locals</span>())
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">162</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._frame._click(<span style="color: rgb(0,135,0)">self</span>._selector, strict=<span class="ansi-bold" style="color: rgb(0,135,0)">True</span>, **params)
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_frame.py:566</span>, in <span class="ansi-cyan-fg">Frame._click</span><span class="ansi-blue-fg">(self, selector, modifiers, position, delay, button, clickCount, timeout, force, noWaitAfter, strict, trial, steps)</span>
+<span class="ansi-green-fg">    551</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">_click</span>(
+<span class="ansi-green-fg">    552</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">    553</span>     selector: <span style="color: rgb(0,135,0)">str</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">    564</span>     steps: <span style="color: rgb(0,135,0)">int</span> = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">    565</span> ) -&gt; <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">566</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._channel.send(<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">click</span><span class="ansi-yellow-fg">"</span>, <span style="color: rgb(0,135,0)">self</span>._timeout, locals_to_params(<span style="color: rgb(0,135,0)">locals</span>()))
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_connection.py:69</span>, in <span class="ansi-cyan-fg">Channel.send</span><span class="ansi-blue-fg">(self, method, timeout_calculator, params, is_internal, title)</span>
+<span class="ansi-green-fg">     61</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">send</span>(
+<span class="ansi-green-fg">     62</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">     63</span>     method: <span style="color: rgb(0,135,0)">str</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">     67</span>     title: <span style="color: rgb(0,135,0)">str</span> = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">     68</span> ) -&gt; Any:
+<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">69</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._connection.wrap_api_call(
+<span class="ansi-green-fg">     70</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">lambda</span>: <span style="color: rgb(0,135,0)">self</span>._inner_send(method, timeout_calculator, params, <span class="ansi-bold" style="color: rgb(0,135,0)">False</span>),
+<span class="ansi-green-fg">     71</span>         is_internal,
+<span class="ansi-green-fg">     72</span>         title,
+<span class="ansi-green-fg">     73</span>     )
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_connection.py:559</span>, in <span class="ansi-cyan-fg">Connection.wrap_api_call</span><span class="ansi-blue-fg">(self, cb, is_internal, title)</span>
+<span class="ansi-green-fg">    557</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> cb()
+<span class="ansi-green-fg">    558</span> <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> <span class="ansi-bold" style="color: rgb(215,95,95)">Exception</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> error:
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">559</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> rewrite_error(error, <span class="ansi-yellow-fg">f</span><span class="ansi-yellow-fg">"</span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>parsed_st[<span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">apiName</span><span class="ansi-yellow-fg">'</span>]<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span class="ansi-yellow-fg">: </span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>error<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span class="ansi-yellow-fg">"</span>) <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">None</span>
+<span class="ansi-green-fg">    560</span> <span class="ansi-bold" style="color: rgb(0,135,0)">finally</span>:
+<span class="ansi-green-fg">    561</span>     <span style="color: rgb(0,135,0)">self</span>._api_zone.set(<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>)
+
+<span class="ansi-red-fg">TimeoutError</span>: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".doclink").first
+    - locator resolved to &lt;input type="submit" class="doclink" value="8/20/2021" onclick="SaveViewState();" name="ctl00$BodyContent$GridView_BO$ctl02$ctl01"/&gt;
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+      - waiting 100ms
+    58 × waiting for element to be visible, enabled and stable
+       - element is not visible
+     - retrying click action
+       - waiting 500ms
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<nav class="nb-nav">
+    
+    <a href="04-maryland-locksmiths-ANSWERS.html" class="nb-nav-prev">&larr; Filling forms to find Maryland locksmiths</a>
+    
+    
+    <span></span>
+    
+</nav>
+
+
+
+<footer class="site-footer">
+    <div class="newsletter-signup">
+        <p class="newsletter-title">Manual Checks</p>
+<p class="newsletter-desc">A newsletter by Jonathan Soma</p>
+<script async src="https://subscribe-forms.beehiiv.com/embed.js"></script>
+<iframe src="https://subscribe-forms.beehiiv.com/74449fe6-9aee-4fca-81ec-c07b8588210f" class="newsletter-embed beehiiv-embed" data-test-id="beehiiv-embed" frameborder="0" scrolling="no"></iframe>
+
+    </div>
+</footer>
+
+
+</div>
+
+<script>
+function setTheme(theme, btn) {
+    var darkNames = {'dark':1, 'noir':1};
+    var cls = darkNames[theme] ? 'noir' : 'broadsheet';
+    document.documentElement.className = 'theme-' + cls;
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    localStorage.setItem('theme', darkNames[theme] ? 'dark' : 'light');
+}
+
+// Sync button active state (theme already set by head script)
+(function() {
+    var saved = localStorage.getItem('theme');
+    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    var label = theme === 'dark' ? 'Dark' : 'Light';
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.trim() === label);
+    });
+})();
+
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('theme')) {
+        var cls = e.matches ? 'broadsheet' : 'noir';
+        document.documentElement.className = 'theme-' + cls;
+        var label = e.matches ? 'Light' : 'Dark';
+        document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+            b.classList.toggle('active', b.textContent.trim() === label);
+        });
+    }
+});
+</script>
+
+<script>
+// Detect blocked newsletter iframes and show a fallback link
+(function() {
+    function replaceWithLink(iframe, src) {
+        var link = document.createElement('a');
+        link.href = src;
+        link.className = 'newsletter-fallback-btn';
+        link.innerHTML = 'Subscribe to the newsletter &rarr;';
+        iframe.replaceWith(link);
+        // Also hide the beehiiv script tag if present
+        var scripts = document.querySelectorAll('.newsletter-signup script');
+        scripts.forEach(function(s) { s.remove(); });
+    }
+    document.querySelectorAll('.newsletter-signup iframe').forEach(function(iframe) {
+        var src = iframe.src;
+        if (!src) return;
+        // Check iframe dimensions after it settles — blocked iframes
+        // typically render as 0-height or very small
+        var timer = setTimeout(function() {
+            var h = iframe.offsetHeight || iframe.getBoundingClientRect().height;
+            if (h < 20) {
+                replaceWithLink(iframe, src);
+            }
+        }, 3000);
+    });
+})();
+</script>
+</body>
+</html>

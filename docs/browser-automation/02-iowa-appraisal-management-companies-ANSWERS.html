@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Paginating through Iowa appraisal companies</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/base.css">
+    
+<link rel="stylesheet" href="../static/read.css">
+
+    <script>
+    // Set theme before paint to avoid FOUC
+    (function(){var s=localStorage.getItem('theme');var t=s||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.className='theme-'+(t==='dark'?'noir':'broadsheet');})();
+    </script>
+</head>
+<body>
+
+<div class="theme-switcher">
+    <button class="active" onclick="setTheme('dark', this)">Dark</button>
+    <button onclick="setTheme('light', this)">Light</button>
+</div>
+
+<div class="page">
+    
+
+<nav class="nb-topnav">
+    <a href="../index.html" class="nb-topnav-home">&larr; Home</a>
+    
+    <div class="nb-topnav-title">Browser automation with Playwright</div>
+    
+    <ol class="nb-topnav-list">
+        
+        <li>
+            
+            <a href="00-opensyllabus-ANSWERS.html">Introduction to Playwright with OpenSyllabus</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="01-texas-tow-trucks-licenses-ANSWERS.html">Scraping Texas tow truck licenses</a>
+            
+        </li>
+        
+        <li class="is-current">
+            
+            <span class="nb-topnav-current">Paginating through Iowa appraisal companies</span>
+            
+        </li>
+        
+        <li>
+            
+            <a href="03-north-dakota-oil-wells-ANSWERS.html">Looping through North Dakota oil well townships</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="04-maryland-locksmiths-ANSWERS.html">Filling forms to find Maryland locksmiths</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="05-texas-medical-board-actions-details-ANSWERS.html">Downloading PDFs from the Texas Medical Board</a>
+            
+        </li>
+        
+    </ol>
+</nav>
+
+
+
+<div class="nb-actions">
+    <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/02-iowa-appraisal-management-companies-ANSWERS.ipynb" class="nb-action-btn nb-action-colab" target="_blank" rel="noopener">Run in Colab</a>
+    <a href="02-iowa-appraisal-management-companies-ANSWERS.ipynb" class="nb-action-btn nb-action-download" download>Download notebook</a>
+</div>
+
+
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=e19a7710">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Install required packages</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">playwright</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">beautifulsoup4</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">lxml</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">html5lib</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">pandas</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">nest_asyncio</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">'✓ Packages installed!'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=9e58f7fe"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Slides:</strong> <a href="./browser-automation.pdf">browser-automation.pdf</a></p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=8931d253-a87f-4a5f-b5b3-3438d6aaa624"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this example we are going to scrape <a href="https://ia-plb.my.site.com/LicenseSearchPage">Iowa's Professional Licensing</a> website for appraisal management companies. (Why? Who knows, why <em>not?</em>)</p>
+<p>Traditionally Python programmers use <a href="https://beautiful-soup-4.readthedocs.io/en/latest/">BeautifulSoup</a> to scrape content from the interent. Instead of being <em>traditional</em>, we're going to use <a href="https://playwright.dev/python/">Playwright</a>, a <strong>browser automation tool</strong>! This means you actually control the browser! Filling out forms, clicking buttons, downloading documents... it's magic!!!✨✨✨</p>
+<h1 id="Iowa-Appraisal-Management-Companies">Iowa Appraisal Management Companies<a class="anchor-link" href="#Iowa-Appraisal-Management-Companies">¶</a></h1><ul>
+<li>Dropdowns</li>
+<li>Clicking 'Next page' button again and again</li>
+<li>Combining dataframes</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=71af9e3e-a65a-42bb-9c69-bf7b85b83263"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Installation">Installation<a class="anchor-link" href="#Installation">¶</a></h2><p>We need to install a few tools first! Remove the <code>#</code> and run the cell to install the Python packages and browsers that we'll need for our scraping adventure.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=f7216c80-6474-48f8-9f27-768ad8cc88cc">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># %pip install --quiet lxml html5lib beautifulsoup4 pandas</span>
+<span class="c1"># %pip install --quiet playwright</span>
+<span class="c1"># !playwright install chromium firefox</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=781107d3"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>And we'll set it up so Playwright will be sure to work on Windows.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=8d2d8698">
+<div class="input">
+<div class="prompt input_prompt">In [3]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">IN_COLAB</span> <span class="o">=</span> <span class="s1">'COLAB_GPU'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="ow">or</span> <span class="s1">'COLAB_RELEASE_TAG'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nest_asyncio</span>
+
+<span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop_policy</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">WindowsProactorEventLoopPolicy</span><span class="p">())</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+    <span class="n">nest_asyncio</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=82263051-f3ac-4f54-b29f-cad7a871b661"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Opening-up-the-browser-and-visiting-our-destination">Opening up the browser and visiting our destination<a class="anchor-link" href="#Opening-up-the-browser-and-visiting-our-destination">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=69e2e5c0-9641-47c0-a71a-122fb40589f2">
+<div class="input">
+<div class="prompt input_prompt">In [1]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.async_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_playwright</span>
+
+<span class="c1"># "Hey, open up a browser"</span>
+<span class="n">playwright</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_playwright</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Colab can't open a visible browser, so we run headless there</span>
+<span class="k">if</span> <span class="n">IN_COLAB</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">browser</span> <span class="o">=</span> <span class="k">await</span> <span class="n">playwright</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="n">use_headless</span><span class="p">)</span>
+
+<span class="c1"># Create a new browser window</span>
+<span class="n">page</span> <span class="o">=</span> <span class="k">await</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_page</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=2e2396e4-9eb2-44c3-8961-3266188eb1bb">
+<div class="input">
+<div class="prompt input_prompt">In [2]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"https://ia-plb.my.site.com/LicenseSearchPage"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[2]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>&lt;Response url='https://ia-plb.my.site.com/LicenseSearchPage' request=&lt;Request url='https://ia-plb.my.site.com/LicenseSearchPage' method='GET'&gt;&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=8d13e0a7">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="n">screenshot</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">screenshot</span><span class="p">()</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">screenshot</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=143bce03-5632-4698-a86e-2fa2d8100b02"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Selecting-an-option-from-a-dropdown">Selecting an option from a dropdown<a class="anchor-link" href="#Selecting-an-option-from-a-dropdown">¶</a></h2><p>You always start with <code>await page.locator("select").select_option("whatever option you want")</code>. You'll probably get an error because there are multiple dropdowns on the page, but Playwright doesn't know which one you want to use! Just read the error and figure out the right one.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=6a4af410-be35-4e4b-b907-faf13935dbba">
+<div class="input">
+<div class="prompt input_prompt">In [4]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># await page.locator("select").select_option("Appraisal Management Company")</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_label</span><span class="p">(</span><span class="s2">"Licensing Board:"</span><span class="p">)</span><span class="o">.</span><span class="n">select_option</span><span class="p">(</span><span class="s2">"Appraisal Management Company"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[4]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>['Appraisal Management Company']</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=5cc1c555-1d1b-499f-98f5-9d8d2316b77d">
+<div class="input">
+<div class="prompt input_prompt">In [5]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># await page.get_by_text("Search").click()</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">"input[name=</span><span class="se">\"</span><span class="s2">j_id0</span><span class="se">\\</span><span class="s2">:j_id1</span><span class="se">\\</span><span class="s2">:j_id14</span><span class="se">\\</span><span class="s2">:j_id73</span><span class="se">\"</span><span class="s2">]"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=9a162dd7-465f-4975-bcc0-2769ff6ce6ca"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Grab-the-tables-from-the-page">Grab the tables from the page<a class="anchor-link" href="#Grab-the-tables-from-the-page">¶</a></h2><p><a href="https://pandas.pydata.org/">Pandas</a> is the Python equivalent to Excel, and it's great at dealing with tabular data! Often the data on a web page that looks like a spreadsheet can be read with <code>pd.read_html</code>.</p>
+<p>You use <code>await page.content()</code> to save the contents of the page, then feed it to <code>read_html</code> to find the tables. <code>len(tables)</code> checks the number of tables you have, then you manually poke around to see which one is the one you're interested in. <code>tables[0]</code> is the first one, <code>tables[1]</code> is the second one, and so on...</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=66be6a9b-c861-4e5a-b95e-3de2548c225b">
+<div class="input">
+<div class="prompt input_prompt">In [6]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+
+<span class="n">html</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="n">tables</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_html</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">html</span><span class="p">))</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[6]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>1</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=d35c6e02-fa86-4075-b80b-f15e81ed4de3">
+<div class="input">
+<div class="prompt input_prompt">In [7]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[7]:</div>
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Number</th>
+<th>Licensee</th>
+<th>License Type</th>
+<th>Licensing Board</th>
+<th>License Status</th>
+<th>ContactLastNameGroup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>00045</td>
+<td>if(!window.sfdcPage) { window.sfdcPage = new A...</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>1</th>
+<td>00028</td>
+<td>360 Appraisal Group</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>2</th>
+<td>00101</td>
+<td>AAA APPRAISAL MANAGEMENT COMPANY LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>3</th>
+<td>00132</td>
+<td>Accelerated Appraisal Management Company LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>4</th>
+<td>00034</td>
+<td>Accurate Group, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>5</th>
+<td>00143</td>
+<td>Accuworth, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>6</th>
+<td>00012</td>
+<td>ACT Appraisal, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>7</th>
+<td>00047</td>
+<td>Allstate Appraisal, L.P.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>8</th>
+<td>AMC00147</td>
+<td>AMC Encore LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>9</th>
+<td>00097</td>
+<td>AMC Links, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>10</th>
+<td>00030</td>
+<td>AMC Settlement Services, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>11</th>
+<td>00120</td>
+<td>AmeriMac Appraisal Management LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>12</th>
+<td>00114</td>
+<td>Applied Valuation Services, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>13</th>
+<td>00080</td>
+<td>Appraisal and Valuation Services, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>14</th>
+<td>00071</td>
+<td>Appraisal Links, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>15</th>
+<td>00041</td>
+<td>Appraisal Linx, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>16</th>
+<td>00106</td>
+<td>Appraisal Logistic Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>17</th>
+<td>00083</td>
+<td>Appraisal Management Services of America, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>18</th>
+<td>00082</td>
+<td>Appraisal Management Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>19</th>
+<td>00087</td>
+<td>Appraisal Management Specialists, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>20</th>
+<td>00145</td>
+<td>Appraisal Marketplace, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>21</th>
+<td>00079</td>
+<td>Appraisal MC LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>22</th>
+<td>00095</td>
+<td>Appraisal Nation, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>23</th>
+<td>00103</td>
+<td>Appraisal Partners LP</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>24</th>
+<td>00093</td>
+<td>Appraisals 2U, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Voluntarily Surrendered</td>
+<td>A-K</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=4609a7d1-73bc-4027-82a6-1568d23d54f0"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Clicking-%22next-page%22-one">Clicking "next page" one<a class="anchor-link" href="#Clicking-%22next-page%22-one">¶</a></h2><p>Just like using a dropdown, select box or button, we'll use <code>page.get_by_text</code> to try to select the button.</p>
+<p>We add <code>timeout=5000</code> to wait 5 seconds before confirming it isn't there.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=4ebbc24e-5ee3-40c0-8e2e-68e72d3d58d6">
+<div class="input">
+<div class="prompt input_prompt">In [8]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># page.get_by_text("Next Page").click()</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">"a:has-text('Next Page')"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=577ff105-01b9-4069-abcf-177f2b6208b4"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Clicking-%22next-page%22-until-it-disappears">Clicking "next page" until it disappears<a class="anchor-link" href="#Clicking-%22next-page%22-until-it-disappears">¶</a></h2><p>Eventually the "next page" link disappears, and Python starts <em>screaming</em>. We use <code>try/except</code> down below to say "don't worry little baby, it's okay, we'll just finish up if the button is gone."</p>
+<p>When we move this into something nice and repeated, <strong>we need to be careful!</strong> Sometimes the page will load before the table does, so we add a line that says "don't get <em>too overeager</em>, wait up to 10 seconds for the table to show up first."</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered celltag_solution" id="cell-id=6a4102aa-4ff0-4212-9896-1db04cb0617c">
+<div class="input">
+<div class="prompt input_prompt">In [10]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># all of our data will end up going here</span>
+<span class="n">all_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="c1"># Wait up to 10 seconds for the table to load</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">"table"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>  
+
+    <span class="c1"># Get all of the tables on the page</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+    <span class="n">tables</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_html</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">html</span><span class="p">))</span>
+
+    <span class="c1"># Get the table (and edit if necessary)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Add the tables on this page to the big list of stuff</span>
+    <span class="n">all_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">all_data</span><span class="p">,</span> <span class="n">df</span><span class="p">],</span> <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Save after each page in case something breaks</span>
+    <span class="n">all_data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">"output.csv"</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">"a:has-text('Next Page')"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">break</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=efc499cd-4804-4ec4-9189-b2a14fdb4c9b">
+<div class="input">
+<div class="prompt input_prompt">In [11]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">all_data</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[11]:</div>
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>Number</th>
+<th>Licensee</th>
+<th>License Type</th>
+<th>Licensing Board</th>
+<th>License Status</th>
+<th>ContactLastNameGroup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>00094</td>
+<td>if(!window.sfdcPage) { window.sfdcPage = new A...</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>1</th>
+<td>00014</td>
+<td>OrderProUSA, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>2</th>
+<td>00054</td>
+<td>Pendo Management, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Voluntarily Surrendered</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>3</th>
+<td>00008</td>
+<td>Pro-Teck Services, Ltd</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>4</th>
+<td>00064</td>
+<td>Property Interlink LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Voluntarily Surrendered</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>5</th>
+<td>00117</td>
+<td>Property Interlink LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>6</th>
+<td>00084</td>
+<td>PropertyRate LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>7</th>
+<td>AMC00150</td>
+<td>R3 Appraisal Management, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>8</th>
+<td>00091</td>
+<td>Radian Settlement Services Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>9</th>
+<td>00018</td>
+<td>Radian Valuation Services LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>10</th>
+<td>00109</td>
+<td>Real Estate Appraisal Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>11</th>
+<td>00009</td>
+<td>Real Estate Valuation Partners, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>12</th>
+<td>AMC00343</td>
+<td>Red Sky Risk Services, LLC</td>
+<td>Federally Regulated</td>
+<td>Appraisal Management Company</td>
+<td>Federally Regulated</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>13</th>
+<td>00002</td>
+<td>Rocket Close, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>14</th>
+<td>00102</td>
+<td>RPM Appraisal Services, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>15</th>
+<td>00105</td>
+<td>RRR Appraisal Services Management Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>16</th>
+<td>00037</td>
+<td>RRR Appraisal Services, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>17</th>
+<td>00074</td>
+<td>Service 1st Valuation and Settlement Services,...</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>18</th>
+<td>00092</td>
+<td>Service 1st, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>19</th>
+<td>00011</td>
+<td>ServiceLink Valuation Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>20</th>
+<td>00100</td>
+<td>SettlementOne Valuation, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>21</th>
+<td>AMC00152</td>
+<td>Signature Valuation Management Inc</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>22</th>
+<td>00042</td>
+<td>SingleSource Property Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>23</th>
+<td>00001</td>
+<td>Solidifi US Inc</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>24</th>
+<td>00019</td>
+<td>Southwest Financial Services, Ltd.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>25</th>
+<td>16</td>
+<td>if(!window.sfdcPage) { window.sfdcPage = new A...</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>26</th>
+<td>46</td>
+<td>Springhouse, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>27</th>
+<td>38</td>
+<td>Stewart Valuation Intelligence, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>28</th>
+<td>17</td>
+<td>Stewart Valuation Services, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>29</th>
+<td>130</td>
+<td>Suntender Valuations, Inc</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>30</th>
+<td>353</td>
+<td>Superstition Management, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Canceled</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>31</th>
+<td>125</td>
+<td>Superstition Management, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>32</th>
+<td>55</td>
+<td>SWBC Lending Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>33</th>
+<td>70</td>
+<td>TCValuations, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>34</th>
+<td>86</td>
+<td>The Property Sciences Group, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>35</th>
+<td>138</td>
+<td>Timios Appraisal Management, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>36</th>
+<td>140</td>
+<td>Townsgate Appraisal Management Company, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Voluntarily Surrendered</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>37</th>
+<td>52</td>
+<td>Trimavin</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>38</th>
+<td>136</td>
+<td>TrUnion Appraisal Services LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>39</th>
+<td>59</td>
+<td>U.S. Real Estate Services, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>40</th>
+<td>113</td>
+<td>USAMC, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>41</th>
+<td>96</td>
+<td>Val-u-Nation, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>42</th>
+<td>69</td>
+<td>Valco Management, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>43</th>
+<td>88</td>
+<td>Valocity, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>44</th>
+<td>62</td>
+<td>Valuation Connect, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>45</th>
+<td>65</td>
+<td>Valuation Link LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Voluntarily Surrendered</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>46</th>
+<td>53</td>
+<td>Valuation Management Group, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>47</th>
+<td>118</td>
+<td>Valuation Services AMC, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>48</th>
+<td>66</td>
+<td>Value Trend Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>49</th>
+<td>26</td>
+<td>Valutrust Solutions, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>50</th>
+<td>110</td>
+<td>if(!window.sfdcPage) { window.sfdcPage = new A...</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>51</th>
+<td>33</td>
+<td>Voxtur Appraisal Services, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>52</th>
+<td>40</td>
+<td>Voxtur Valuation, LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Lapsed</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>53</th>
+<td>142</td>
+<td>Worth Valuation Services, Inc.</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+<tr>
+<th>54</th>
+<td>20</td>
+<td>Xome Settlement Services LLC</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Expired</td>
+<td>A-K</td>
+</tr>
+<tr>
+<th>55</th>
+<td>144</td>
+<td>Zap Appraisals, Limited Liability Company</td>
+<td>Appraisal Management Company Registration</td>
+<td>Appraisal Management Company</td>
+<td>Active</td>
+<td>L-Z</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=56e592f9-8b0c-4147-b91d-271179d314ef"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Saving-the-results">Saving the results<a class="anchor-link" href="#Saving-the-results">¶</a></h2><p>Now we'll save it to a CSV file! Easy peasy.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=66248fd9-0e86-4fbe-954d-53c004c9237f">
+<div class="input">
+<div class="prompt input_prompt">In [12]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">all_data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">"output.csv"</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<nav class="nb-nav">
+    
+    <a href="01-texas-tow-trucks-licenses-ANSWERS.html" class="nb-nav-prev">&larr; Scraping Texas tow truck licenses</a>
+    
+    
+    <a href="03-north-dakota-oil-wells-ANSWERS.html" class="nb-nav-next">Looping through North Dakota oil well townships &rarr;</a>
+    
+</nav>
+
+
+
+<footer class="site-footer">
+    <div class="newsletter-signup">
+        <p class="newsletter-title">Manual Checks</p>
+<p class="newsletter-desc">A newsletter by Jonathan Soma</p>
+<script async src="https://subscribe-forms.beehiiv.com/embed.js"></script>
+<iframe src="https://subscribe-forms.beehiiv.com/74449fe6-9aee-4fca-81ec-c07b8588210f" class="newsletter-embed beehiiv-embed" data-test-id="beehiiv-embed" frameborder="0" scrolling="no"></iframe>
+
+    </div>
+</footer>
+
+
+</div>
+
+<script>
+function setTheme(theme, btn) {
+    var darkNames = {'dark':1, 'noir':1};
+    var cls = darkNames[theme] ? 'noir' : 'broadsheet';
+    document.documentElement.className = 'theme-' + cls;
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    localStorage.setItem('theme', darkNames[theme] ? 'dark' : 'light');
+}
+
+// Sync button active state (theme already set by head script)
+(function() {
+    var saved = localStorage.getItem('theme');
+    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    var label = theme === 'dark' ? 'Dark' : 'Light';
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.trim() === label);
+    });
+})();
+
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('theme')) {
+        var cls = e.matches ? 'broadsheet' : 'noir';
+        document.documentElement.className = 'theme-' + cls;
+        var label = e.matches ? 'Light' : 'Dark';
+        document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+            b.classList.toggle('active', b.textContent.trim() === label);
+        });
+    }
+});
+</script>
+
+<script>
+// Detect blocked newsletter iframes and show a fallback link
+(function() {
+    function replaceWithLink(iframe, src) {
+        var link = document.createElement('a');
+        link.href = src;
+        link.className = 'newsletter-fallback-btn';
+        link.innerHTML = 'Subscribe to the newsletter &rarr;';
+        iframe.replaceWith(link);
+        // Also hide the beehiiv script tag if present
+        var scripts = document.querySelectorAll('.newsletter-signup script');
+        scripts.forEach(function(s) { s.remove(); });
+    }
+    document.querySelectorAll('.newsletter-signup iframe').forEach(function(iframe) {
+        var src = iframe.src;
+        if (!src) return;
+        // Check iframe dimensions after it settles — blocked iframes
+        // typically render as 0-height or very small
+        var timer = setTimeout(function() {
+            var h = iframe.offsetHeight || iframe.getBoundingClientRect().height;
+            if (h < 20) {
+                replaceWithLink(iframe, src);
+            }
+        }, 3000);
+    });
+})();
+</script>
+</body>
+</html>

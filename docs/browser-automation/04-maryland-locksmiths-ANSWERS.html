@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Filling forms to find Maryland locksmiths</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/base.css">
+    
+<link rel="stylesheet" href="../static/read.css">
+
+    <script>
+    // Set theme before paint to avoid FOUC
+    (function(){var s=localStorage.getItem('theme');var t=s||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.className='theme-'+(t==='dark'?'noir':'broadsheet');})();
+    </script>
+</head>
+<body>
+
+<div class="theme-switcher">
+    <button class="active" onclick="setTheme('dark', this)">Dark</button>
+    <button onclick="setTheme('light', this)">Light</button>
+</div>
+
+<div class="page">
+    
+
+<nav class="nb-topnav">
+    <a href="../index.html" class="nb-topnav-home">&larr; Home</a>
+    
+    <div class="nb-topnav-title">Browser automation with Playwright</div>
+    
+    <ol class="nb-topnav-list">
+        
+        <li>
+            
+            <a href="00-opensyllabus-ANSWERS.html">Introduction to Playwright with OpenSyllabus</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="01-texas-tow-trucks-licenses-ANSWERS.html">Scraping Texas tow truck licenses</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="02-iowa-appraisal-management-companies-ANSWERS.html">Paginating through Iowa appraisal companies</a>
+            
+        </li>
+        
+        <li>
+            
+            <a href="03-north-dakota-oil-wells-ANSWERS.html">Looping through North Dakota oil well townships</a>
+            
+        </li>
+        
+        <li class="is-current">
+            
+            <span class="nb-topnav-current">Filling forms to find Maryland locksmiths</span>
+            
+        </li>
+        
+        <li>
+            
+            <a href="05-texas-medical-board-actions-details-ANSWERS.html">Downloading PDFs from the Texas Medical Board</a>
+            
+        </li>
+        
+    </ol>
+</nav>
+
+
+
+<div class="nb-actions">
+    <a href="https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/04-maryland-locksmiths-ANSWERS.ipynb" class="nb-action-btn nb-action-colab" target="_blank" rel="noopener">Run in Colab</a>
+    <a href="04-maryland-locksmiths-ANSWERS.ipynb" class="nb-action-btn nb-action-download" download>Download notebook</a>
+</div>
+
+
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=a68d25ff">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Install required packages</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">playwright</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">beautifulsoup4</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">lxml</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">html5lib</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">pandas</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="o">--</span><span class="n">quiet</span> <span class="n">nest_asyncio</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">'✓ Packages installed!'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=9d15b4ce"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Slides:</strong> <a href="./browser-automation.pdf">browser-automation.pdf</a></p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=2a43a97a-85aa-4251-a05d-5ec2cc91fe44"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this example we are going to scrape <a href="https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=LOCKSMITH::LOCKSMITH_personal_location">locksmiths</a> from Maryland's <a href="https://www.dllr.state.md.us/pq/">licensing queries</a> site.</p>
+<p>Traditionally Python programmers use <a href="https://beautiful-soup-4.readthedocs.io/en/latest/">BeautifulSoup</a> to scrape content from the interent. Instead of being <em>traditional</em>, we're going to use <a href="https://playwright.dev/python/">Playwright</a>, a <strong>browser automation tool</strong>! This means you actually control the browser! Filling out forms, clicking buttons, downloading documents... it's magic!!!✨✨✨</p>
+<h1 id="Maryland-locksmiths">Maryland locksmiths<a class="anchor-link" href="#Maryland-locksmiths">¶</a></h1><ul>
+<li>Inspecting the page</li>
+<li>Filling in a text box</li>
+<li>Working through a list of inputs (zip codes, in this case)</li>
+<li>Combining dataframes</li>
+<li>Back button</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=ee675aba-820b-4af6-87c9-8e678ded7df9"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Installation">Installation<a class="anchor-link" href="#Installation">¶</a></h2><p>We need to install a few tools first! Remove the <code>#</code> and run the cell to install the Python packages and browsers that we'll need for our scraping adventure.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=f7216c80-6474-48f8-9f27-768ad8cc88cc">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># %pip install --quiet lxml html5lib beautifulsoup4 pandas</span>
+<span class="c1"># %pip install --quiet playwright</span>
+<span class="c1"># !playwright install chromium firefox</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=f4ddb36d"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>And we'll set it up so Playwright will be sure to work on Windows.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=d039316a">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">IN_COLAB</span> <span class="o">=</span> <span class="s1">'COLAB_GPU'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="ow">or</span> <span class="s1">'COLAB_RELEASE_TAG'</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nest_asyncio</span>
+
+<span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">set_event_loop_policy</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">WindowsProactorEventLoopPolicy</span><span class="p">())</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+    <span class="n">nest_asyncio</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=5144ddcd-7ec1-44db-9d4a-a605d3013a6d"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Opening-up-the-browser-and-visiting-our-destination">Opening up the browser and visiting our destination<a class="anchor-link" href="#Opening-up-the-browser-and-visiting-our-destination">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=69e2e5c0-9641-47c0-a71a-122fb40589f2">
+<div class="input">
+<div class="prompt input_prompt">In [1]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.async_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_playwright</span>
+
+<span class="c1"># "Hey, open up a browser"</span>
+<span class="n">playwright</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_playwright</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Colab can't open a visible browser, so we run headless there</span>
+<span class="k">if</span> <span class="n">IN_COLAB</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">use_headless</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">browser</span> <span class="o">=</span> <span class="k">await</span> <span class="n">playwright</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="n">use_headless</span><span class="p">)</span>
+
+<span class="c1"># Create a new browser window</span>
+<span class="n">page</span> <span class="o">=</span> <span class="k">await</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_page</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=2e2396e4-9eb2-44c3-8961-3266188eb1bb">
+<div class="input">
+<div class="prompt input_prompt">In [2]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=LOCKSMITH::LOCKSMITH_personal_location"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[2]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>&lt;Response url='https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=LOCKSMITH::LOCKSMITH_personal_location' request=&lt;Request url='https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=LOCKSMITH::LOCKSMITH_personal_location' method='GET'&gt;&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=9dfcee81">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="n">screenshot</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">screenshot</span><span class="p">()</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">screenshot</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=c8c8e231-47ce-451f-a365-8789f512cc9c"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Filling-in-a-text-box">Filling in a text box<a class="anchor-link" href="#Filling-in-a-text-box">¶</a></h2><p>You always start with <code>await page.locator("input").fill("whatever you want")</code>. You'll probably get an error because there are multiple inputs on the page, but Playwright doesn't know which one you want to use! Just read the error and figure out the right one.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=6a4af410-be35-4e4b-b907-faf13935dbba">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 20601 </span>
+<span class="c1"># 20602</span>
+<span class="c1"># 20603</span>
+<span class="c1"># 20606</span>
+<span class="c1"># 20607</span>
+<span class="c1"># 20608</span>
+<span class="c1"># 20609</span>
+
+<span class="c1"># await page.locator("input").fill("20602")</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">"[name='zip']"</span><span class="p">)</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">"20602"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=5cc1c555-1d1b-499f-98f5-9d8d2316b77d">
+<div class="input">
+<div class="prompt input_prompt">In [4]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># await page.get_by_text("Search").click()</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Search"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=afb8d3d1-2eb1-4942-9403-5e99a89309e3"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Grab-the-tables-from-the-page">Grab the tables from the page<a class="anchor-link" href="#Grab-the-tables-from-the-page">¶</a></h2><p><a href="https://pandas.pydata.org/">Pandas</a> is the Python equivalent to Excel, and it's great at dealing with tabular data! Often the data on a web page that looks like a spreadsheet can be read with <code>pd.read_html</code>.</p>
+<p>You use <code>await page.content()</code> to save the contents of the page, then feed it to <code>read_html</code> to find the tables. <code>len(tables)</code> checks the number of tables you have, then you manually poke around to see which one is the one you're interested in. <code>tables[0]</code> is the first one, <code>tables[1]</code> is the second one, and so on...</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=66be6a9b-c861-4e5a-b95e-3de2548c225b">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+
+<span class="n">html</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">"table"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+<span class="n">tables</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_html</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">html</span><span class="p">))</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[ ]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>1</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=d35c6e02-fa86-4075-b80b-f15e81ed4de3">
+<div class="input">
+<div class="prompt input_prompt">In [6]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[6]:</div>
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+<th>5</th>
+<th>6</th>
+<th>7</th>
+<th>8</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>Personal Name</td>
+<td>Business Legal/Trading as Name and Street Address</td>
+<td>City</td>
+<td>State</td>
+<td>Zip</td>
+<td>Expiration</td>
+<td>Category</td>
+<td>Reg. #</td>
+<td>Suffix</td>
+</tr>
+<tr>
+<th>1</th>
+<td>CALBERT BRATHWAITE</td>
+<td>LOCKOUT SOLUTIONS 3608 MATLOCK PLACE Total Act...</td>
+<td>WALDORF</td>
+<td>MD</td>
+<td>20602</td>
+<td>2026-11-16</td>
+<td>LOCKSMITH</td>
+<td>384</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2</th>
+<td>ALBA MARTINEZ ALAFARO</td>
+<td>M &amp; W LOCKSMITH LLC 855 COPLEY AVENUE Total Ac...</td>
+<td>WALDORF</td>
+<td>MD</td>
+<td>20602</td>
+<td>2026-09-08</td>
+<td>LOCKSMITH</td>
+<td>532</td>
+<td>NaN</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=4ebbc24e-5ee3-40c0-8e2e-68e72d3d58d6">
+<div class="input">
+<div class="prompt input_prompt">In [7]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">go_back</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt output_prompt">Out[7]:</div>
+<div class="output_text output_subarea output_execute_result">
+<pre>&lt;Response url='https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=LOCKSMITH::LOCKSMITH_personal_location' request=&lt;Request url='https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=LOCKSMITH::LOCKSMITH_personal_location' method='GET'&gt;&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=adeaefe1-cd74-4d86-a8a6-ef80c31f7665"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Fill-out-the-ZIP-code-field-again-and-again-and-again">Fill out the ZIP code field again and again and again<a class="anchor-link" href="#Fill-out-the-ZIP-code-field-again-and-again-and-again">¶</a></h2><p>I found a list of zipcodes on the internet! I pasted them below, then used <code>.split()</code> to make them into something we could use in Python.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=78680b8c-2b86-448d-9318-7e0e12031fc9">
+<div class="input">
+<div class="prompt input_prompt">In [8]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">zipcodes</span> <span class="o">=</span> <span class="s2">"""20906</span>
+<span class="s2">21234</span>
+<span class="s2">20878</span>
+<span class="s2">21740</span>
+<span class="s2">20874</span>
+<span class="s2">21122</span>
+<span class="s2">21222</span>
+<span class="s2">21117</span>
+<span class="s2">20904</span>
+<span class="s2">20744</span>
+<span class="s2">21061</span>
+<span class="s2">21215</span>
+<span class="s2">20902</span>
+<span class="s2">20772</span>
+<span class="s2">21207</span>
+<span class="s2">20850</span>
+<span class="s2">21206</span>
+<span class="s2">20774</span>
+<span class="s2">20783</span>
+<span class="s2">21228</span>
+<span class="s2">20854</span>
+<span class="s2">20852</span>
+<span class="s2">21043</span>
+<span class="s2">21702</span>
+<span class="s2">21218</span>
+<span class="s2">21044</span>
+<span class="s2">21921</span>
+<span class="s2">20910</span>
+<span class="s2">21224</span>
+<span class="s2">21229"""</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">zipcodes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>['20906', '21234', '20878', '21740', '20874', '21122', '21222', '21117', '20904', '20744', '21061', '21215', '20902', '20772', '21207', '20850', '21206', '20774', '20783', '21228', '20854', '20852', '21043', '21702', '21218', '21044', '21921', '20910', '21224', '21229']
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=68183a4d-0ad8-4b81-bc4d-b70fc67b37b0"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now we fill out the form for each and every zip code, one by one, pulling out the tables and saving them and adding them to the list.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered celltag_solution" id="cell-id=6a4102aa-4ff0-4212-9896-1db04cb0617c">
+<div class="input">
+<div class="prompt input_prompt">In [9]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+
+<span class="n">all_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+<span class="c1"># Go to the front page</span>
+<span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=LOCKSMITH::LOCKSMITH_personal_location"</span><span class="p">)</span>
+
+<span class="c1"># Search for each zipcode</span>
+<span class="k">for</span> <span class="n">zipcode</span> <span class="ow">in</span> <span class="n">zipcodes</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Searching for"</span><span class="p">,</span> <span class="n">zipcode</span><span class="p">)</span>
+
+    <span class="c1"># Fill out the form and search</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">locator</span><span class="p">(</span><span class="s2">"[name='zip']"</span><span class="p">)</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">zipcode</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"button"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Search"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+
+    <span class="c1"># try:</span>
+    <span class="c1"># Get all of the tables on the page</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">"table"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">content</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_html</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">html</span><span class="p">))</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Get the table (and edit if necessary)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Found"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+    
+        <span class="c1"># Add the tables on this page to </span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">all_data</span><span class="p">,</span> <span class="n">df</span><span class="p">],</span> <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Nothing found"</span><span class="p">)</span>
+
+    <span class="c1"># Save after each zip code in case something breaks</span>
+    <span class="n">all_data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">"output.csv"</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Go back and start again</span>
+    <span class="k">await</span> <span class="n">page</span><span class="o">.</span><span class="n">go_back</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="output_wrapper">
+<div class="output">
+<div class="output_area">
+<div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Searching for 20906
+</pre>
+</div>
+</div>
+<div class="output_area">
+<div class="prompt"></div>
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">TimeoutError</span>                              Traceback (most recent call last)
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[9]</span><span class="ansi-green-fg">, line 14</span>
+<span class="ansi-green-fg">     11</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Searching for</span><span class="ansi-yellow-fg">"</span>, zipcode)
+<span class="ansi-green-fg">     13</span> <span style="color: rgb(95,135,135)"># Fill out the form and search</span>
+<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">14</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> page.locator(<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">[name=</span><span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">zip</span><span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">]</span><span class="ansi-yellow-fg">"</span>).fill(zipcode)
+<span class="ansi-green-fg">     15</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> page.get_by_role(<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">button</span><span class="ansi-yellow-fg">"</span>, name=<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Search</span><span class="ansi-yellow-fg">"</span>).click()
+<span class="ansi-green-fg">     17</span> <span style="color: rgb(95,135,135)"># try:</span>
+<span class="ansi-green-fg">     18</span> <span style="color: rgb(95,135,135)"># Get all of the tables on the page</span>
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/async_api/_generated.py:15943</span>, in <span class="ansi-cyan-fg">Locator.fill</span><span class="ansi-blue-fg">(self, value, timeout, no_wait_after, force)</span>
+<span class="ansi-green-fg">  15898</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">fill</span>(
+<span class="ansi-green-fg">  15899</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">  15900</span>     value: <span style="color: rgb(0,135,0)">str</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">  15904</span>     force: typing.Optional[<span style="color: rgb(0,135,0)">bool</span>] = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">  15905</span> ) -&gt; <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">  15906</span> <span style="color: rgb(188,188,188)">    </span><span class="ansi-yellow-fg">"""Locator.fill</span>
+<span class="ansi-green-fg">  15907</span> 
+<span class="ansi-green-fg">  15908</span> <span class="ansi-yellow-fg">    Set a value to the input field.</span>
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">  15939</span> <span class="ansi-yellow-fg">        Whether to bypass the [actionability](../actionability.md) checks. Defaults to `false`.</span>
+<span class="ansi-green-fg">  15940</span> <span class="ansi-yellow-fg">    """</span>
+<span class="ansi-green-fg">  15942</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> mapping.from_maybe_impl(
+<span class="ansi-green-fg">&gt; </span><span class="ansi-green-fg">15943</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._impl_obj.fill(
+<span class="ansi-green-fg">  15944</span>             value=value, timeout=timeout, noWaitAfter=no_wait_after, force=force
+<span class="ansi-green-fg">  15945</span>         )
+<span class="ansi-green-fg">  15946</span>     )
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_locator.py:215</span>, in <span class="ansi-cyan-fg">Locator.fill</span><span class="ansi-blue-fg">(self, value, timeout, noWaitAfter, force)</span>
+<span class="ansi-green-fg">    207</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">fill</span>(
+<span class="ansi-green-fg">    208</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">    209</span>     value: <span style="color: rgb(0,135,0)">str</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">    212</span>     force: <span style="color: rgb(0,135,0)">bool</span> = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">    213</span> ) -&gt; <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">    214</span>     params = locals_to_params(<span style="color: rgb(0,135,0)">locals</span>())
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">215</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._frame.fill(<span style="color: rgb(0,135,0)">self</span>._selector, strict=<span class="ansi-bold" style="color: rgb(0,135,0)">True</span>, **params)
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_frame.py:607</span>, in <span class="ansi-cyan-fg">Frame.fill</span><span class="ansi-blue-fg">(self, selector, value, timeout, noWaitAfter, strict, force)</span>
+<span class="ansi-green-fg">    598</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">fill</span>(
+<span class="ansi-green-fg">    599</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">    600</span>     selector: <span style="color: rgb(0,135,0)">str</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">    605</span>     force: <span style="color: rgb(0,135,0)">bool</span> = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">    606</span> ) -&gt; <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">607</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._fill(**locals_to_params(<span style="color: rgb(0,135,0)">locals</span>()))
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_frame.py:619</span>, in <span class="ansi-cyan-fg">Frame._fill</span><span class="ansi-blue-fg">(self, selector, value, timeout, noWaitAfter, strict, force, title)</span>
+<span class="ansi-green-fg">    609</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">_fill</span>(
+<span class="ansi-green-fg">    610</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">    611</span>     selector: <span style="color: rgb(0,135,0)">str</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">    617</span>     title: <span style="color: rgb(0,135,0)">str</span> = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">    618</span> ) -&gt; <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">619</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._channel.send(<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">fill</span><span class="ansi-yellow-fg">"</span>, <span style="color: rgb(0,135,0)">self</span>._timeout, locals_to_params(<span style="color: rgb(0,135,0)">locals</span>()))
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_connection.py:69</span>, in <span class="ansi-cyan-fg">Channel.send</span><span class="ansi-blue-fg">(self, method, timeout_calculator, params, is_internal, title)</span>
+<span class="ansi-green-fg">     61</span> <span class="ansi-bold" style="color: rgb(0,135,0)">async</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">send</span>(
+<span class="ansi-green-fg">     62</span>     <span style="color: rgb(0,135,0)">self</span>,
+<span class="ansi-green-fg">     63</span>     method: <span style="color: rgb(0,135,0)">str</span>,
+<span class="ansi-green-fg">   (...)</span><span class="ansi-green-fg">     67</span>     title: <span style="color: rgb(0,135,0)">str</span> = <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+<span class="ansi-green-fg">     68</span> ) -&gt; Any:
+<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">69</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> <span style="color: rgb(0,135,0)">self</span>._connection.wrap_api_call(
+<span class="ansi-green-fg">     70</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">lambda</span>: <span style="color: rgb(0,135,0)">self</span>._inner_send(method, timeout_calculator, params, <span class="ansi-bold" style="color: rgb(0,135,0)">False</span>),
+<span class="ansi-green-fg">     71</span>         is_internal,
+<span class="ansi-green-fg">     72</span>         title,
+<span class="ansi-green-fg">     73</span>     )
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/.pyenv/versions/3.13.9/lib/python3.13/site-packages/playwright/_impl/_connection.py:559</span>, in <span class="ansi-cyan-fg">Connection.wrap_api_call</span><span class="ansi-blue-fg">(self, cb, is_internal, title)</span>
+<span class="ansi-green-fg">    557</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">await</span> cb()
+<span class="ansi-green-fg">    558</span> <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> <span class="ansi-bold" style="color: rgb(215,95,95)">Exception</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> error:
+<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">559</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> rewrite_error(error, <span class="ansi-yellow-fg">f</span><span class="ansi-yellow-fg">"</span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>parsed_st[<span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">apiName</span><span class="ansi-yellow-fg">'</span>]<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span class="ansi-yellow-fg">: </span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>error<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span class="ansi-yellow-fg">"</span>) <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">None</span>
+<span class="ansi-green-fg">    560</span> <span class="ansi-bold" style="color: rgb(0,135,0)">finally</span>:
+<span class="ansi-green-fg">    561</span>     <span style="color: rgb(0,135,0)">self</span>._api_zone.set(<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>)
+
+<span class="ansi-red-fg">TimeoutError</span>: Locator.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("[name='zip']")
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=efc499cd-4804-4ec4-9189-b2a14fdb4c9b">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">all_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=75f610e3-9320-4726-9aed-6c6ef8d333c6">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">all_data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered" id="cell-id=9009845c-d3ba-4b27-98eb-bcbd97946f0c"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Saving-the-results">Saving the results<a class="anchor-link" href="#Saving-the-results">¶</a></h2><p>Now we'll save it to a CSV file! Easy peasy.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered" id="cell-id=66248fd9-0e86-4fbe-954d-53c004c9237f">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">all_data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">"output.csv"</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<nav class="nb-nav">
+    
+    <a href="03-north-dakota-oil-wells-ANSWERS.html" class="nb-nav-prev">&larr; Looping through North Dakota oil well townships</a>
+    
+    
+    <a href="05-texas-medical-board-actions-details-ANSWERS.html" class="nb-nav-next">Downloading PDFs from the Texas Medical Board &rarr;</a>
+    
+</nav>
+
+
+
+<footer class="site-footer">
+    <div class="newsletter-signup">
+        <p class="newsletter-title">Manual Checks</p>
+<p class="newsletter-desc">A newsletter by Jonathan Soma</p>
+<script async src="https://subscribe-forms.beehiiv.com/embed.js"></script>
+<iframe src="https://subscribe-forms.beehiiv.com/74449fe6-9aee-4fca-81ec-c07b8588210f" class="newsletter-embed beehiiv-embed" data-test-id="beehiiv-embed" frameborder="0" scrolling="no"></iframe>
+
+    </div>
+</footer>
+
+
+</div>
+
+<script>
+function setTheme(theme, btn) {
+    var darkNames = {'dark':1, 'noir':1};
+    var cls = darkNames[theme] ? 'noir' : 'broadsheet';
+    document.documentElement.className = 'theme-' + cls;
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    localStorage.setItem('theme', darkNames[theme] ? 'dark' : 'light');
+}
+
+// Sync button active state (theme already set by head script)
+(function() {
+    var saved = localStorage.getItem('theme');
+    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    var label = theme === 'dark' ? 'Dark' : 'Light';
+    document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+        b.classList.toggle('active', b.textContent.trim() === label);
+    });
+})();
+
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('theme')) {
+        var cls = e.matches ? 'broadsheet' : 'noir';
+        document.documentElement.className = 'theme-' + cls;
+        var label = e.matches ? 'Light' : 'Dark';
+        document.querySelectorAll('.theme-switcher button').forEach(function(b) {
+            b.classList.toggle('active', b.textContent.trim() === label);
+        });
+    }
+});
+</script>
+
+<script>
+// Detect blocked newsletter iframes and show a fallback link
+(function() {
+    function replaceWithLink(iframe, src) {
+        var link = document.createElement('a');
+        link.href = src;
+        link.className = 'newsletter-fallback-btn';
+        link.innerHTML = 'Subscribe to the newsletter &rarr;';
+        iframe.replaceWith(link);
+        // Also hide the beehiiv script tag if present
+        var scripts = document.querySelectorAll('.newsletter-signup script');
+        scripts.forEach(function(s) { s.remove(); });
+    }
+    document.querySelectorAll('.newsletter-signup iframe').forEach(function(iframe) {
+        var src = iframe.src;
+        if (!src) return;
+        // Check iframe dimensions after it settles — blocked iframes
+        // typically render as 0-height or very small
+        var timer = setTimeout(function() {
+            var h = iframe.offsetHeight || iframe.getBoundingClientRect().height;
+            if (h < 20) {
+                replaceWithLink(iframe, src);
+            }
+        }, 3000);
+    });
+})();
+</script>
+</body>
+</html>
