@@ -51,13 +51,13 @@ Now we're typing into text fields instead of picking from dropdowns. We'll loop 
 
 - [Maryland electronic licensing](https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=locksmith::locksmith)
 
-### Downloading PDFs from the Texas Medical Board
+### Downloading PDFs from the NC State Bar
 
-The final boss: navigate to a page, fill in a license number, click through tabs, find document links, and download PDFs. Then do it all over again for a whole list of licenses.
+The final boss: navigate to a page, loop through some letters, click through some pages, and download PDFs.
 
-[Open in Colab](https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/05-texas-medical-board-actions-details-ANSWERS.ipynb) | [Code-along](https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/05-texas-medical-board-actions-details.ipynb) | [Read online](https://jsoma.github.io/workshop-browser-automation/browser-automation/05-texas-medical-board-actions-details-ANSWERS.html)
+[Open in Colab](https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/05-nc-state-bar-discipline-orders-ANSWERS.ipynb) | [Code-along](https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/05-nc-state-bar-discipline-orders.ipynb) | [Read online](https://jsoma.github.io/workshop-browser-automation/browser-automation/05-nc-state-bar-discipline-orders-ANSWERS.html)
 
-- [Texas Medical Board search](https://profile.tmb.state.tx.us/SearchBA.aspx)
+- [NC State Bar Discipline Orders](https://www.ncbar.gov/lawyer-discipline/search-past-orders/orders-in-discipline-and-disability-cases/)
 
 ### AI-powered scraper writer
 

@@ -61,15 +61,22 @@ sections:
         links:
           - name: "Maryland electronic licensing"
             url: "https://www.dllr.state.md.us/cgi-bin/ElectronicLicensing/OP_Search/OP_search.cgi?calling_app=locksmith::locksmith"
-      "05-Texas Medical Board Actions Details.ipynb":
-        title: "Downloading PDFs from the Texas Medical Board"
-        description: "The final boss: navigate to a page, fill in a license number, click through tabs, find document links, and download PDFs. Then do it all over again for a whole list of licenses."
+      # "05-Texas Medical Board Actions Details.ipynb":
+      #   title: "Downloading PDFs from the Texas Medical Board"
+      #   description: "The final boss: navigate to a page, fill in a license number, click through tabs, find document links, and download PDFs. Then do it all over again for a whole list of licenses."
+      #   order: 6
+      #   data_files:
+      #     - "licenses.csv"
+      #   links:
+      #     - name: "Texas Medical Board search"
+      #       url: "https://profile.tmb.state.tx.us/SearchBA.aspx"
+      "05-NC State Bar Discipline Orders.ipynb":
+        title: "Downloading PDFs from the NC State Bar"
+        description: "The final boss: navigate to a page, loop through some letters, click through some pages, and download PDFs."
         order: 6
-        data_files:
-          - "licenses.csv"
         links:
-          - name: "Texas Medical Board search"
-            url: "https://profile.tmb.state.tx.us/SearchBA.aspx"
+          - name: "NC State Bar Discipline Orders"
+            url: "https://www.ncbar.gov/lawyer-discipline/search-past-orders/orders-in-discipline-and-disability-cases/"
       "06-Scraper Writer.ipynb":
         title: "AI-powered scraper writer"
         description: "Point an AI agent at a website and let it write a Playwright scraper for you. You describe what you want in plain English, it explores the page and produces a working script. Requires a free Google AI API key."
