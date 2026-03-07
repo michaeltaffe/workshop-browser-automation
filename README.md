@@ -10,6 +10,15 @@ Learn to scrape JavaScript-rendered websites using Playwright. We'll click butto
 
 ## Notebooks
 
+### Introduction to Playwright with the NICAR schedule (uggghhhh)
+
+When requests and BeautifulSoup can't see content because it's rendered by JavaScript, it's time to bring in a real browser. We'll use Playwright to scrape a JavaScript-heavy site, click 'Show More' buttons, and pull data into pandas.
+
+[Open in Colab](https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/00-nicar-ANSWERS.ipynb) | [Code-along](https://colab.research.google.com/github/jsoma/workshop-browser-automation/blob/main/docs/browser-automation/00-nicar.ipynb) | [Read online](https://jsoma.github.io/workshop-browser-automation/browser-automation/00-nicar-ANSWERS.html)
+
+- [Playwright for Python](https://playwright.dev/python/)
+- [NICAR Schedule](https://schedules.ire.org/nicar-2026/#/schedule)
+
 ### Introduction to Playwright with OpenSyllabus
 
 When requests and BeautifulSoup can't see content because it's rendered by JavaScript, it's time to bring in a real browser. We'll use Playwright to scrape a JavaScript-heavy site, click 'Show More' buttons, and pull data into pandas.

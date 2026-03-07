@@ -33,6 +33,15 @@ sections:
             url: "https://playwright.dev/python/"
           - name: "OpenSyllabus"
             url: "https://opensyllabus.org/"
+      "00-NICAR.ipynb":
+        title: "Introduction to Playwright with the NICAR schedule (uggghhhh)"
+        description: "When requests and BeautifulSoup can't see content because it's rendered by JavaScript, it's time to bring in a real browser. We'll use Playwright to scrape a JavaScript-heavy site, click 'Show More' buttons, and pull data into pandas."
+        order: 1
+        links:
+          - name: "Playwright for Python"
+            url: "https://playwright.dev/python/"
+          - name: "NICAR Schedule"
+            url: "https://schedules.ire.org/nicar-2026/#/schedule"
       "01-Texas Tow Trucks Licenses.ipynb":
         title: "Scraping Texas tow truck licenses"
         description: "A gentle warm-up: select an option from a dropdown, click search, and grab the results table. Just enough interaction to get comfortable with Playwright's selectors."
